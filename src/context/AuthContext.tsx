@@ -118,7 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Fallback: se o Supabase não responder em 5s, libera a tela
+    const timeout = setTimeout(() => setLoading(false), 5000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout);
       const user = session?.user ?? null;
       setCurrentUser(user);
       if (user) {
