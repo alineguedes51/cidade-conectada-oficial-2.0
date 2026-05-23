@@ -183,7 +183,7 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Top categories */}
-        <div className="lg:col-span-2 bg-slate-950/40 border border-white/8 rounded-2xl p-6 space-y-5">
+        <div className="lg:col-span-2 bg-slate-900 border border-white/8 rounded-2xl p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-slate-400" />
@@ -214,7 +214,7 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
         </div>
 
         {/* Resolution donut */}
-        <div className="bg-slate-950/40 border border-white/8 rounded-2xl p-6 flex flex-col items-center justify-center gap-4">
+        <div className="bg-slate-900 border border-white/8 rounded-2xl p-6 flex flex-col items-center justify-center gap-4">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Taxa de Resolução</span>
           <div className="relative w-32 h-32">
             <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
@@ -261,28 +261,28 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
           <div className="relative flex-1 max-w-sm">
             <input
               type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-brand-green/50 placeholder:text-slate-500"
+              className="w-full bg-slate-900 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-brand-green/50 placeholder:text-slate-500"
               placeholder="Buscar por protocolo, bairro, cidadão..."
             />
             <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
           </div>
           <div className="flex gap-2 flex-wrap">
             <select value={bairroFilter} onChange={(e) => setBairroFilter(e.target.value)}
-              className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
+              className="bg-slate-900 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
               <option value="todos">Todos os Bairros</option>
               {BAIRROS.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
+              className="bg-slate-900 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
               <option value="todas">Todas as Categorias</option>
               {Object.entries(CATEGORY_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
+              className="bg-slate-900 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
               <option value="todos">Todos os Status</option>
               {Object.entries(STATUS_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
-            <div className="flex bg-slate-950/80 border border-white/10 rounded-xl overflow-hidden">
+            <div className="flex bg-slate-900 border border-white/10 rounded-xl overflow-hidden">
               {(['tabela', 'mapa'] as const).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className={`px-4 py-2.5 text-xs font-semibold transition ${activeTab === tab ? 'bg-brand-green/15 text-brand-green' : 'text-slate-400 hover:text-slate-200'}`}>
@@ -303,7 +303,7 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
               <Loader2 className="w-8 h-8 text-brand-green animate-spin" />
             </div>
           ) : (
-            <div className="bg-slate-950/30 rounded-2xl border border-white/5 overflow-hidden">
+            <div className="bg-slate-900 rounded-2xl border border-white/10 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-[800px] w-full text-xs">
                   <thead>
