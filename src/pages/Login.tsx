@@ -46,9 +46,11 @@ export default function Login({ onNavigate, initialTab = 'login' }: LoginProps) 
     if (!email || !password) { showToast('Preencha todos os campos obrigatórios.', 'error'); return; }
     setLoading(true);
     try {
-      await signIn(email, password);
+      const { role } = await signIn(email, password);
       showToast('Login efetuado com sucesso!', 'success');
-      onNavigate('dashboard');
+      if (role === 'adm') onNavigate('admin');
+      else if (role === 'gestor') onNavigate('gestor');
+      else onNavigate('dashboard');
     } catch (err: any) {
       showToast(err.message || 'E-mail ou senha incorretos.', 'error');
     } finally {

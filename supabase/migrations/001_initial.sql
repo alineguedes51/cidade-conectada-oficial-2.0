@@ -121,8 +121,7 @@ CREATE POLICY "reports_update_adm" ON public.reports
   );
 
 CREATE POLICY "reports_update_owner" ON public.reports
-  FOR UPDATE USING ("userId" = (auth.uid())::text)
-  WITH CHECK (status = OLD.status);  -- dono não pode mudar status
+  FOR UPDATE USING ("userId" = (auth.uid())::text);
 
 -- Apenas adm/gestor podem deletar
 CREATE POLICY "reports_delete_adm" ON public.reports

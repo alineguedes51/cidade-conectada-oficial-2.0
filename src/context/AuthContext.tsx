@@ -7,7 +7,7 @@ interface AuthContextType {
   currentUser: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ id: string; fullName: string; whatsapp: string }>;
+  signIn: (email: string, password: string) => Promise<{ id: string; fullName: string; whatsapp: string; role: string }>;
   signUp: (fullName: string, email: string, whatsapp: string, password: string) => Promise<{ id: string; fullName: string; whatsapp: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: data.user.id,
       fullName: profile?.fullName ?? email,
       whatsapp: profile?.whatsapp ?? '',
+      role: profile?.role ?? 'comum',
     };
   };
 

@@ -3,9 +3,9 @@ import { Report, CATEGORY_LABELS, STATUS_LABELS, ReportCategory, ReportStatus, S
 import { supabase } from '../supabase/client';
 import { useAuth } from '../context/AuthContext';
 import {
-  ShieldCheck, Search, Trash2, Edit3, MapPin, CheckCircle2,
-  AlertTriangle, Hammer, MessageSquareCode, BarChart3, Clock,
-  TrendingUp, Filter, Eye
+  ShieldCheck, Search, Trash2, Eye, BarChart3, Clock,
+  TrendingUp, Filter, MapPin, CheckCircle2, AlertCircle,
+  Loader2, RefreshCw, FileText, ChevronDown
 } from 'lucide-react';
 import { formatDate } from '../utils/helpers';
 import { useToast } from '../context/ToastContext';
@@ -20,11 +20,25 @@ interface AdminDashboardProps {
 }
 
 const STATUS_CONFIG = {
-  recebido:  { label: 'Recebido',      color: 'text-emerald-400', bar: 'bg-emerald-500', ring: 'ring-emerald-500/20' },
-  analise:   { label: 'Em Análise',    color: 'text-amber-400',   bar: 'bg-amber-500',   ring: 'ring-amber-500/20' },
-  andamento: { label: 'Em Andamento',  color: 'text-blue-400',    bar: 'bg-blue-500',    ring: 'ring-blue-500/20' },
-  resolvido: { label: 'Resolvido',     color: 'text-violet-400',  bar: 'bg-violet-500',  ring: 'ring-violet-500/20' },
+  recebido:  { label: 'Recebido',     bg: 'bg-sky-500/15',     text: 'text-sky-400',     border: 'border-sky-500/30',     dot: 'bg-sky-400',     bar: 'bg-sky-500'     },
+  analise:   { label: 'Em Análise',   bg: 'bg-amber-500/15',   text: 'text-amber-400',   border: 'border-amber-500/30',   dot: 'bg-amber-400',   bar: 'bg-amber-500'   },
+  andamento: { label: 'Em Andamento', bg: 'bg-violet-500/15',  text: 'text-violet-400',  border: 'border-violet-500/30',  dot: 'bg-violet-400',  bar: 'bg-violet-500'  },
+  resolvido: { label: 'Resolvido',    bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/30', dot: 'bg-emerald-400', bar: 'bg-emerald-500' },
 } as const;
+
+const BAIRROS = [
+  'Agamenon Magalhães', 'Alto do Céu', 'Ana de Albuquerque', 'Bela Vista', 'Bonfim',
+  'Campina de Feira', 'Centro', 'Cruz de Rebouças', 'Cuieiras', 'Distrito de Três Ladeiras',
+  'Distrito Nova Cruz', 'Encanto Igarassu', 'Inhamã', 'Jardim Boa Sorte', 'Monjope',
+  'Nova Cruz', 'Panco', 'Posto de Monta', 'Rubina', 'Santa Luzia', 'Santa Rita',
+  'Santo Antônio', 'Saramandaia', 'Sitio dos Marcos', 'Tabatinga', 'Triunfo',
+  'Umbura', 'Vila Rural',
+];
+
+const CATEGORY_ICONS: Record<string, string> = {
+  buraco: '🕳️', lampada: '💡', entulho: '🪨', lixo: '🗑️',
+  vazamento: '💧', esgoto: '🚰', outros: '📋',
+};
 
 export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess, loading }: AdminDashboardProps) {
   const { userProfile } = useAuth();
@@ -33,10 +47,11 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('todas');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
+  const [bairroFilter, setBairroFilter] = useState<string>('todos');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'tabela' | 'mapa'>('tabela');
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  // Stats
   const total = reports.length;
   const byStatus = {
     recebido:  reports.filter(r => r.status === 'recebido').length,
@@ -50,11 +65,10 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
     acc[r.category] = (acc[r.category] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-  const categoryMax = Math.max(...Object.values(categoryCounts), 1);
-
-  const recentReports = [...reports]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  const topCategories = Object.entries(categoryCounts)
+    .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
+  const categoryMax = Math.max(...Object.values(categoryCounts), 1);
 
   const handleUpdateStatus = async (reportId: string, newStatus: ReportStatus) => {
     setUpdatingId(reportId);
@@ -74,12 +88,12 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
   };
 
   const handleDeleteReport = async (reportId: string) => {
-    if (!confirm('Deletar permanentemente esta denúncia?')) return;
     setUpdatingId(reportId);
+    setConfirmDelete(null);
     try {
       const { error } = await supabase.from('reports').delete().eq('id', reportId);
       if (error) throw error;
-      showToast('Denúncia removida.', 'success');
+      showToast('Denúncia removida com sucesso.', 'success');
       onUpdateSuccess();
     } catch {
       showToast('Erro ao remover denúncia.', 'error');
@@ -95,182 +109,183 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
       r.address.toLowerCase().includes(q) ||
       r.userName.toLowerCase().includes(q) ||
       r.description.toLowerCase().includes(q);
-    const matchCat = categoryFilter === 'todas' || r.category === categoryFilter;
-    const matchSt  = statusFilter === 'todos'   || r.status === statusFilter;
-    return matchSearch && matchCat && matchSt;
+    const matchCat    = categoryFilter === 'todas' || r.category === categoryFilter;
+    const matchSt     = statusFilter === 'todos'   || r.status === statusFilter;
+    const matchBairro = bairroFilter === 'todos'   || r.address.toLowerCase().includes(bairroFilter.toLowerCase());
+    return matchSearch && matchCat && matchSt && matchBairro;
   });
 
   return (
     <div className="max-w-7xl mx-auto py-10 px-4 relative z-10 space-y-8">
 
-      {/* ── HEADER ─────────────────────────────────────── */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-green/10 border border-brand-green/20 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-brand-green" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-white leading-none">Painel Administrativo</h1>
-              <p className="text-slate-400 text-xs mt-0.5">
-                Zeladoria Urbana de Igarassu &nbsp;·&nbsp;
-                <span className="text-brand-green font-semibold">{userProfile?.fullName}</span>
-              </p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-brand-green/10 border border-brand-green/20 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-6 h-6 text-brand-green" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold text-white leading-tight">Painel Administrativo</h1>
+            <p className="text-slate-400 text-xs mt-0.5">
+              Zeladoria Urbana · Igarassu &nbsp;·&nbsp;
+              <span className="text-brand-green font-semibold">{userProfile?.fullName}</span>
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-950/40 border border-white/5 px-4 py-2 rounded-xl">
-          <Clock className="w-3.5 h-3.5" />
-          <span>Atualizado em tempo real via Supabase</span>
-          <span className="flex h-2 w-2 ml-1">
-            <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-brand-green opacity-75" />
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-green/5 border border-brand-green/20 text-xs text-brand-green font-semibold">
+          <span className="flex h-2 w-2 relative mr-1">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-green opacity-60" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-green" />
           </span>
+          Sincronizado em tempo real
         </div>
       </div>
 
-      {/* ── METRIC CARDS ───────────────────────────────── */}
+      {/* STAT CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-950/40 p-5 rounded-2xl border border-white/5 col-span-2 lg:col-span-1 flex flex-col gap-1">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total de Registros</span>
-          <span className="text-4xl font-black text-white mt-1">{total}</span>
-          <div className="flex items-center gap-1 text-brand-green text-[11px] font-semibold mt-auto">
-            <TrendingUp className="w-3 h-3" />
-            <span>Denúncias cadastradas</span>
-          </div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
+          className="col-span-2 lg:col-span-1 bg-gradient-to-br from-brand-green/10 to-emerald-900/10 border border-brand-green/20 rounded-2xl p-5 flex flex-col gap-2"
+        >
+          <span className="text-[10px] text-brand-green font-bold uppercase tracking-widest">Total</span>
+          <span className="text-4xl font-black text-white">{total}</span>
+          <span className="text-[11px] text-slate-400 flex items-center gap-1">
+            <FileText className="w-3 h-3" /> denúncias registradas
+          </span>
+        </motion.div>
 
-        {(Object.entries(byStatus) as [ReportStatus, number][]).map(([status, count]) => {
+        {(Object.entries(byStatus) as [keyof typeof STATUS_CONFIG, number][]).map(([status, count], i) => {
           const cfg = STATUS_CONFIG[status];
           const pct = total > 0 ? Math.round((count / total) * 100) : 0;
           return (
-            <div key={status} className="bg-slate-950/40 p-4 rounded-2xl border border-white/5 flex flex-col gap-2">
+            <motion.div
+              key={status}
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i + 1) * 0.07 }}
+              className={`${cfg.bg} border ${cfg.border} rounded-2xl p-4 flex flex-col gap-2`}
+            >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{cfg.label}</span>
-                <span className={`text-[10px] font-bold ${cfg.color}`}>{pct}%</span>
+                <span className={`text-[10px] font-bold uppercase tracking-widest ${cfg.text}`}>{cfg.label}</span>
+                <span className={`text-[10px] font-mono font-bold ${cfg.text} opacity-70`}>{pct}%</span>
               </div>
-              <span className="text-2xl font-black text-white">{count}</span>
-              <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mt-auto">
-                <div className={`h-full ${cfg.bar} rounded-full transition-all duration-700`} style={{ width: `${pct}%` }} />
+              <span className="text-3xl font-black text-white">{count}</span>
+              <div className="w-full h-1 bg-black/20 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, delay: 0.3 }}
+                  className={`h-full ${cfg.bar} rounded-full`}
+                />
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
-      {/* ── ANALYTICS ROW ──────────────────────────────── */}
+      {/* ANALYTICS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Category bar chart */}
-        <div className="lg:col-span-2 bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md space-y-4">
-          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+        {/* Top categories */}
+        <div className="lg:col-span-2 bg-slate-950/40 border border-white/8 rounded-2xl p-6 space-y-5">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-blue-400" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-white">Volume por Categoria</h3>
+              <BarChart3 className="w-4 h-4 text-slate-400" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Categorias mais reportadas</h3>
             </div>
-            <span className="text-[10px] text-slate-500 font-mono">{total} total</span>
+            <span className="text-[10px] text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">{total} total</span>
           </div>
-          <div className="space-y-3">
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
-              const count = categoryCounts[key] || 0;
-              const pct = total > 0 ? (count / categoryMax) * 100 : 0;
+          <div className="space-y-3.5">
+            {topCategories.length > 0 ? topCategories.map(([key, count]) => {
+              const pct = Math.round((count / categoryMax) * 100);
               return (
                 <div key={key} className="flex items-center gap-3">
-                  <span className="text-[11px] text-slate-400 w-36 shrink-0 truncate">{label}</span>
-                  <div className="flex-1 h-2 bg-slate-950 rounded-full overflow-hidden">
+                  <span className="text-base w-6 shrink-0">{CATEGORY_ICONS[key] || '📋'}</span>
+                  <span className="text-[11px] text-slate-300 w-28 shrink-0 truncate font-medium">{CATEGORY_LABELS[key as ReportCategory]}</span>
+                  <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                     <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.8, delay: 0.1 }}
-                      className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full"
+                      initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, delay: 0.2 }}
+                      className="h-full bg-gradient-to-r from-brand-green to-emerald-400 rounded-full"
                     />
                   </div>
-                  <span className="text-[11px] font-bold text-blue-400 w-6 text-right">{count}</span>
+                  <span className="text-[11px] font-bold text-brand-green w-5 text-right">{count}</span>
                 </div>
               );
-            })}
+            }) : (
+              <p className="text-[11px] text-slate-500 text-center py-4">Nenhum dado ainda.</p>
+            )}
           </div>
         </div>
 
-        {/* Resolution rate + recent */}
-        <div className="flex flex-col gap-4">
-          {/* Donut-style rate */}
-          <div className="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md flex flex-col items-center justify-center gap-3">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Taxa de Resolução</span>
-            <div className="relative w-24 h-24">
-              <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                <circle
-                  cx="18" cy="18" r="15.9" fill="none"
-                  stroke="url(#grad)" strokeWidth="3"
-                  strokeDasharray={`${resolutionRate} ${100 - resolutionRate}`}
-                  strokeLinecap="round"
-                />
-                <defs>
-                  <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="100%" stopColor="#6366f1" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xl font-black text-white">{resolutionRate}%</span>
-              </div>
+        {/* Resolution donut */}
+        <div className="bg-slate-950/40 border border-white/8 rounded-2xl p-6 flex flex-col items-center justify-center gap-4">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Taxa de Resolução</span>
+          <div className="relative w-32 h-32">
+            <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="3.5" />
+              <motion.circle
+                cx="18" cy="18" r="15.9" fill="none"
+                stroke="url(#adminGrad)" strokeWidth="3.5"
+                strokeLinecap="round"
+                initial={{ strokeDasharray: '0 100' }}
+                animate={{ strokeDasharray: `${resolutionRate} ${100 - resolutionRate}` }}
+                transition={{ duration: 1, delay: 0.4 }}
+              />
+              <defs>
+                <linearGradient id="adminGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#10b981" />
+                  <stop offset="100%" stopColor="#34d399" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-black text-white">{resolutionRate}%</span>
+              <span className="text-[9px] text-slate-500 uppercase tracking-wide">resolvido</span>
             </div>
-            <p className="text-[11px] text-slate-400 text-center">
-              <span className="text-violet-400 font-bold">{byStatus.resolvido}</span> de {total} resolvidas
-            </p>
           </div>
-
-          {/* Recent activity */}
-          <div className="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md flex-1">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" /> Mais Recentes
-            </h3>
-            <div className="space-y-2.5">
-              {recentReports.map(r => {
-                const cfg = STATUS_CONFIG[r.status];
-                return (
-                  <div key={r.id} className="flex items-start gap-2.5 cursor-pointer hover:bg-white/5 rounded-lg p-1.5 -mx-1.5 transition" onClick={() => onViewDetails(r.id)}>
-                    <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${cfg.bar}`} />
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-slate-200 font-semibold truncate">{CATEGORY_LABELS[r.category]}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{r.address}</p>
-                    </div>
-                  </div>
-                );
-              })}
-              {recentReports.length === 0 && <p className="text-[11px] text-slate-500 text-center py-2">Nenhuma denúncia ainda.</p>}
-            </div>
+          <div className="w-full space-y-2 mt-1">
+            {(Object.entries(STATUS_CONFIG) as [keyof typeof STATUS_CONFIG, typeof STATUS_CONFIG[keyof typeof STATUS_CONFIG]][]).map(([s, cfg]) => (
+              <div key={s} className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                  <span className="text-slate-400">{cfg.label}</span>
+                </div>
+                <span className="font-bold text-slate-300">{byStatus[s]}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── REPORTS TABLE / MAP TABS ────────────────────── */}
+      {/* FILTER + TABLE */}
       <div className="space-y-4">
-        {/* Filter bar */}
-        <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between bg-[#050507]/20 border border-white/5 rounded-2xl p-4">
-          <div className="relative w-full md:max-w-xs">
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="relative flex-1 max-w-sm">
             <input
               type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#050507]/60 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-green"
-              placeholder="Protocolo, bairro, cidadão..."
+              className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-brand-green/50 placeholder:text-slate-500"
+              placeholder="Buscar por protocolo, bairro, cidadão..."
             />
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2 focus:outline-none">
-              <option value="todas">Todas Categorias</option>
+          <div className="flex gap-2 flex-wrap">
+            <select value={bairroFilter} onChange={(e) => setBairroFilter(e.target.value)}
+              className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
+              <option value="todos">Todos os Bairros</option>
+              {BAIRROS.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
+              <option value="todas">Todas as Categorias</option>
               {Object.entries(CATEGORY_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2 focus:outline-none">
-              <option value="todos">Todos Status</option>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none cursor-pointer">
+              <option value="todos">Todos os Status</option>
               {Object.entries(STATUS_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
-            {/* Tab switcher */}
             <div className="flex bg-slate-950/80 border border-white/10 rounded-xl overflow-hidden">
               {(['tabela', 'mapa'] as const).map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-3 py-2 text-xs font-semibold transition capitalize ${activeTab === tab ? 'bg-brand-green/20 text-brand-green' : 'text-slate-400 hover:text-slate-200'}`}>
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2.5 text-xs font-semibold transition ${activeTab === tab ? 'bg-brand-green/15 text-brand-green' : 'text-slate-400 hover:text-slate-200'}`}>
                   {tab === 'tabela' ? 'Tabela' : 'Mapa'}
                 </button>
               ))}
@@ -278,82 +293,129 @@ export default function AdminDashboard({ reports, onViewDetails, onUpdateSuccess
           </div>
         </div>
 
-        {/* Result count */}
-        <p className="text-[11px] text-slate-500 px-1">
+        <p className="text-[11px] text-slate-500">
           Exibindo <span className="text-slate-300 font-bold">{filtered.length}</span> de {total} denúncias
         </p>
 
         {activeTab === 'tabela' ? (
-          <div className="bg-slate-950/30 rounded-2xl border border-white/5 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-[820px] w-full text-slate-200 text-xs">
-                <thead>
-                  <tr className="bg-slate-950/60 border-b border-white/5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-left">
-                    <th className="p-4">Protocolo</th>
-                    <th className="p-4">Cidadão</th>
-                    <th className="p-4">Categoria</th>
-                    <th className="p-4">Endereço</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {filtered.length > 0 ? filtered.map(report => {
-                    const lc = STATUS_COLORS[report.status];
-                    return (
-                      <tr key={report.id} className="hover:bg-white/[0.03] transition">
-                        <td className="p-4">
-                          <span className="font-mono font-bold text-white text-[11px] block">{report.protocol}</span>
-                          <span className="text-[10px] text-slate-500 mt-0.5 block">{formatDate(report.createdAt)}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className="font-semibold text-slate-200 block">{report.userName}</span>
-                          <span className="text-[10px] text-slate-500">{report.userWhatsapp}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-semibold text-blue-300">{CATEGORY_LABELS[report.category]}</span>
-                          <p className="line-clamp-1 text-slate-400 mt-1 text-[11px]">{report.description}</p>
-                        </td>
-                        <td className="p-4 max-w-[160px]">
-                          <span className="line-clamp-2 text-slate-300 leading-relaxed">{report.address}</span>
-                        </td>
-                        <td className="p-4">
-                          <select
-                            value={report.status}
-                            disabled={updatingId === report.id}
-                            onChange={(e) => handleUpdateStatus(report.id, e.target.value as ReportStatus)}
-                            className={`bg-slate-950 text-[11px] rounded-lg px-2.5 py-1 border focus:outline-none font-bold cursor-pointer ${lc.text} ${lc.border}`}
-                          >
-                            {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                              <option key={k} value={k} className="text-slate-300 bg-slate-950">{v}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button onClick={() => onViewDetails(report.id)} title="Ver detalhes" className="p-1.5 rounded-lg bg-white/5 hover:bg-blue-500/20 text-slate-400 hover:text-blue-400 border border-white/5 transition cursor-pointer">
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => handleDeleteReport(report.id)} title="Deletar" disabled={updatingId === report.id} className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 transition cursor-pointer">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+          loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 text-brand-green animate-spin" />
+            </div>
+          ) : (
+            <div className="bg-slate-950/30 rounded-2xl border border-white/5 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-[800px] w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-white/5 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-left">
+                      <th className="px-5 py-3.5">Protocolo</th>
+                      <th className="px-5 py-3.5">Cidadão</th>
+                      <th className="px-5 py-3.5">Categoria</th>
+                      <th className="px-5 py-3.5">Endereço</th>
+                      <th className="px-5 py-3.5">Status</th>
+                      <th className="px-5 py-3.5 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {filtered.length > 0 ? filtered.map((report, idx) => {
+                      const cfg = STATUS_CONFIG[report.status];
+                      return (
+                        <motion.tr
+                          key={report.id}
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.03 }}
+                          className="hover:bg-white/[0.025] transition group"
+                        >
+                          <td className="px-5 py-4">
+                            <span className="font-mono font-bold text-white text-[11px]">{report.protocol}</span>
+                            <span className="text-[10px] text-slate-500 block mt-0.5">{formatDate(report.createdAt)}</span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="font-semibold text-slate-200">{report.userName}</span>
+                            <span className="text-[10px] text-slate-500 block mt-0.5">{report.userWhatsapp || '—'}</span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm">{CATEGORY_ICONS[report.category] || '📋'}</span>
+                              <span className="text-[11px] text-slate-300 font-medium">{CATEGORY_LABELS[report.category]}</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5 max-w-[140px]">{report.description}</p>
+                          </td>
+                          <td className="px-5 py-4 max-w-[150px]">
+                            <span className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">{report.address || '—'}</span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="relative inline-block">
+                              <select
+                                value={report.status}
+                                disabled={updatingId === report.id}
+                                onChange={(e) => handleUpdateStatus(report.id, e.target.value as ReportStatus)}
+                                className={`appearance-none pr-6 pl-2.5 py-1.5 rounded-lg text-[10px] font-bold border cursor-pointer focus:outline-none ${cfg.bg} ${cfg.text} ${cfg.border}`}
+                              >
+                                {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                                  <option key={k} value={k} className="bg-slate-900 text-slate-200">{v}</option>
+                                ))}
+                              </select>
+                              {updatingId === report.id
+                                ? <Loader2 className="absolute right-1.5 top-2 w-3 h-3 animate-spin opacity-60" />
+                                : <ChevronDown className="absolute right-1.5 top-2 w-3 h-3 opacity-50 pointer-events-none" />
+                              }
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => onViewDetails(report.id)}
+                                title="Ver detalhes"
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-blue-500/20 text-slate-400 hover:text-blue-400 border border-white/5 transition cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              {confirmDelete === report.id ? (
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => handleDeleteReport(report.id)} className="text-[10px] bg-rose-500/20 text-rose-400 border border-rose-500/20 px-2 py-1 rounded-lg font-bold hover:bg-rose-500/30 transition cursor-pointer">
+                                    Confirmar
+                                  </button>
+                                  <button onClick={() => setConfirmDelete(null)} className="text-[10px] bg-white/5 text-slate-400 border border-white/10 px-2 py-1 rounded-lg font-bold hover:bg-white/10 transition cursor-pointer">
+                                    Não
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmDelete(report.id)}
+                                  disabled={updatingId === report.id}
+                                  title="Deletar"
+                                  className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 transition cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </motion.tr>
+                      );
+                    }) : (
+                      <tr>
+                        <td colSpan={6} className="py-16 text-center">
+                          <AlertCircle className="w-8 h-8 text-slate-600 mx-auto mb-3" />
+                          <p className="text-slate-500 text-xs">Nenhuma denúncia encontrada com esses filtros.</p>
                         </td>
                       </tr>
-                    );
-                  }) : (
-                    <tr><td colSpan={6} className="p-10 text-center text-slate-500">Nenhuma denúncia encontrada.</td></tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           <div className="h-[480px] rounded-2xl overflow-hidden border border-white/10">
             <MapComponent latitude={-7.8341} longitude={-34.9061} onChangeLocation={() => {}} readOnly={true} />
           </div>
         )}
       </div>
+
+      <p className="text-[10px] text-slate-600 text-center">
+        Alterações de status são aplicadas imediatamente. &nbsp;·&nbsp; Exclusões são permanentes.
+      </p>
     </div>
   );
 }
