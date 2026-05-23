@@ -118,7 +118,7 @@ export default function GestorDashboard({ onNavigate }: GestorDashboardProps) {
         <button
           onClick={() => fetchUsers(true)}
           disabled={refreshing}
-          className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 bg-white/5 border border-white/10 px-4 py-2 rounded-xl transition cursor-pointer"
+          className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 bg-slate-800 border border-white/10 px-4 py-2 rounded-xl transition cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
           Atualizar lista
@@ -133,7 +133,7 @@ export default function GestorDashboard({ onNavigate }: GestorDashboardProps) {
           { label: 'Administradores', value: counts.adm,    color: 'text-brand-green', sub: 'gerenciam denúncias'  },
           { label: 'Gestores',        value: counts.gestor, color: 'text-purple-400', sub: 'controle total'        },
         ].map(({ label, value, color, sub }) => (
-          <div key={label} className="bg-slate-950/40 p-4 rounded-2xl border border-white/5 space-y-1">
+          <div key={label} className="bg-slate-900 p-4 rounded-2xl border border-white/5 space-y-1">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block">{label}</span>
             <span className={`text-3xl font-black block ${color}`}>{value}</span>
             <span className="text-[10px] text-slate-500">{sub}</span>
@@ -164,13 +164,13 @@ export default function GestorDashboard({ onNavigate }: GestorDashboardProps) {
           <input
             type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome ou e-mail..."
-            className="w-full bg-[#050507]/60 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
+            className="w-full bg-slate-900 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
           />
           <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
         </div>
         <select
           value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-slate-950/80 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2 focus:outline-none"
+          className="bg-slate-900 text-xs text-slate-300 border border-white/10 rounded-xl px-3 py-2 focus:outline-none"
         >
           <option value="todos">Todos os papéis</option>
           <option value="comum">Cidadão</option>
@@ -189,10 +189,10 @@ export default function GestorDashboard({ onNavigate }: GestorDashboardProps) {
           <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
         </div>
       ) : (
-        <div className="bg-slate-950/30 rounded-2xl border border-white/5 overflow-hidden">
+        <div className="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden">
           <table className="w-full text-xs text-slate-300">
             <thead>
-              <tr className="bg-slate-950/60 border-b border-white/5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-left">
+              <tr className="bg-slate-800 border-b border-white/5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-left">
                 <th className="p-4">Usuário</th>
                 <th className="p-4 hidden md:table-cell">E-mail</th>
                 <th className="p-4 hidden md:table-cell">WhatsApp</th>
@@ -206,7 +206,7 @@ export default function GestorDashboard({ onNavigate }: GestorDashboardProps) {
                 const isGestor = user.role === 'gestor';
                 const style = ROLE_STYLE[user.role];
                 return (
-                  <tr key={user.uid} className={`hover:bg-white/[0.03] transition ${isMe ? 'bg-purple-500/5' : ''}`}>
+                  <tr key={user.uid} className={`hover:bg-slate-800/50 transition ${isMe ? 'bg-purple-500/10' : ''}`}>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold border shrink-0 ${style.badge}`}>
@@ -254,7 +254,7 @@ export default function GestorDashboard({ onNavigate }: GestorDashboardProps) {
                             <button onClick={() => handleDeleteUser(user.uid)} className="text-[10px] bg-rose-500/20 text-rose-400 border border-rose-500/20 px-2 py-1 rounded-lg font-bold hover:bg-rose-500/30 transition cursor-pointer">
                               Confirmar
                             </button>
-                            <button onClick={() => setConfirmDelete(null)} className="text-[10px] bg-white/5 text-slate-400 border border-white/10 px-2 py-1 rounded-lg font-bold hover:bg-white/10 transition cursor-pointer">
+                            <button onClick={() => setConfirmDelete(null)} className="text-[10px] bg-slate-800 text-slate-400 border border-white/10 px-2 py-1 rounded-lg font-bold hover:bg-slate-700 transition cursor-pointer">
                               Não
                             </button>
                           </div>
@@ -262,7 +262,7 @@ export default function GestorDashboard({ onNavigate }: GestorDashboardProps) {
                           <button
                             disabled={updatingId === user.uid}
                             onClick={() => setConfirmDelete(user.uid)}
-                            className="p-1.5 bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg transition border border-white/5 cursor-pointer mx-auto block"
+                            className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg transition border border-white/5 cursor-pointer mx-auto block"
                             title="Remover usuário"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
