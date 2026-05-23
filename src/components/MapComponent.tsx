@@ -19,13 +19,34 @@ interface MapComponentProps {
 export const IGARASSU_CENTER = { lat: -7.8341, lng: -34.9061 };
 
 const PRESET_BAIRROS = [
-  { name: 'Centro', lat: -7.8341, lng: -34.9061 },
-  { name: 'Cruz de Rebouças', lat: -7.8425, lng: -34.9189 },
-  { name: 'Santo Antônio', lat: -7.8288, lng: -34.9015 },
-  { name: 'Saramandaia', lat: -7.8472, lng: -34.9042 },
-  { name: 'Campina de Feira', lat: -7.8177, lng: -34.8985 },
-  { name: 'Inhamã', lat: -7.8302, lng: -34.9298 },
-  { name: 'Cortegada', lat: -7.8590, lng: -34.9250 }
+  { name: 'Agamenon Magalhães',      lat: -7.8210, lng: -34.9120 },
+  { name: 'Alto do Céu',             lat: -7.8195, lng: -34.9080 },
+  { name: 'Ana de Albuquerque',      lat: -7.8350, lng: -34.9150 },
+  { name: 'Bela Vista',              lat: -7.8260, lng: -34.9050 },
+  { name: 'Bonfim',                  lat: -7.8230, lng: -34.9010 },
+  { name: 'Campina de Feira',        lat: -7.8177, lng: -34.8985 },
+  { name: 'Centro',                  lat: -7.8341, lng: -34.9061 },
+  { name: 'Cruz de Rebouças',        lat: -7.8425, lng: -34.9189 },
+  { name: 'Cuieiras',                lat: -7.8490, lng: -34.9100 },
+  { name: 'Distrito de Três Ladeiras', lat: -7.8600, lng: -34.9300 },
+  { name: 'Distrito Nova Cruz',      lat: -7.8550, lng: -34.9200 },
+  { name: 'Encanto Igarassu',        lat: -7.8320, lng: -34.9220 },
+  { name: 'Inhamã',                  lat: -7.8302, lng: -34.9298 },
+  { name: 'Jardim Boa Sorte',        lat: -7.8270, lng: -34.9170 },
+  { name: 'Monjope',                 lat: -7.8380, lng: -34.9280 },
+  { name: 'Nova Cruz',               lat: -7.8520, lng: -34.9180 },
+  { name: 'Panco',                   lat: -7.8440, lng: -34.9130 },
+  { name: 'Posto de Monta',          lat: -7.8360, lng: -34.9000 },
+  { name: 'Rubina',                  lat: -7.8310, lng: -34.9090 },
+  { name: 'Santa Luzia',             lat: -7.8240, lng: -34.9140 },
+  { name: 'Santa Rita',              lat: -7.8290, lng: -34.9200 },
+  { name: 'Santo Antônio',           lat: -7.8288, lng: -34.9015 },
+  { name: 'Saramandaia',             lat: -7.8472, lng: -34.9042 },
+  { name: 'Sitio dos Marcos',        lat: -7.8460, lng: -34.8970 },
+  { name: 'Tabatinga',               lat: -7.8400, lng: -34.9050 },
+  { name: 'Triunfo',                 lat: -7.8330, lng: -34.9250 },
+  { name: 'Umbura',                  lat: -7.8500, lng: -34.9140 },
+  { name: 'Vila Rural',              lat: -7.8415, lng: -34.9070 },
 ];
 
 export default function MapComponent({ latitude, longitude, onChangeLocation, readOnly = false }: MapComponentProps) {
