@@ -151,11 +151,7 @@ export default function ReportWizard({ onSuccess, onCancel }: ReportWizardProps)
   };
 
   const handleCameraCapture = () => {
-    showToast('Simulando captura instantânea da câmera...', 'info');
-    setTimeout(() => {
-      setPreviewUrl(CATEGORY_MOCK_IMAGES[category ?? 'outros']);
-      showToast('Foto capturada pela câmera com sucesso!', 'success');
-    }, 1200);
+    document.getElementById('camera-input')?.click();
   };
 
   const handleSubmit = async (overrideAuth?: { uid: string; fullName: string; whatsapp: string }) => {
@@ -431,7 +427,7 @@ export default function ReportWizard({ onSuccess, onCancel }: ReportWizardProps)
                     <div className="flex gap-2 justify-center pt-2">
                       <label className="px-3.5 py-1.5 bg-white border border-brand-green/20 rounded-xl hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer">
                         <ImageIcon className="w-4 h-4 text-brand-green" />
-                        <span>Procurar Arquivo</span>
+                        <span>Galeria</span>
                         <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                       </label>
                       <button
@@ -440,8 +436,16 @@ export default function ReportWizard({ onSuccess, onCancel }: ReportWizardProps)
                         className="px-3.5 py-1.5 bg-brand-green/10 hover:bg-brand-green/20 text-brand-green font-bold text-xs border border-brand-green/20 rounded-xl flex items-center gap-1.5 cursor-pointer transition"
                       >
                         <Camera className="w-4 h-4" />
-                        <span>Simular Câmera</span>
+                        <span>Câmera</span>
                       </button>
+                      <input
+                        id="camera-input"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
                     </div>
                   </div>
                 )}
