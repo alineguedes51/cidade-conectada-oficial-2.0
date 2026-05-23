@@ -6,10 +6,84 @@ import { generateProtocolCode, CATEGORY_MOCK_IMAGES } from '../utils/helpers';
 import { useToast } from '../context/ToastContext';
 import MapComponent, { IGARASSU_CENTER } from './MapComponent';
 import {
-  MapPin, Trash, Check, Camera, Image as ImageIcon, Sparkles,
-  ChevronLeft, ChevronRight, HelpCircle, Loader2, FileText, CheckCircle2
+  MapPin, Trash, Check, Camera, Image as ImageIcon,
+  ChevronLeft, ChevronRight, Loader2, CheckCircle2,
+  Lightbulb, Droplets, AlertTriangle, Trash2, Construction, Wind, ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+
+const CATEGORY_OPTIONS = [
+  {
+    key: 'buraco',
+    label: 'Buraco na Via',
+    description: 'Cratera, afundamento ou dano no asfalto',
+    icon: AlertTriangle,
+    color: 'text-orange-500',
+    bg: 'bg-orange-100',
+    border: 'border-orange-300',
+    selectedBg: 'bg-orange-50',
+  },
+  {
+    key: 'lampada',
+    label: 'Iluminação Pública',
+    description: 'Lâmpada apagada ou poste com defeito',
+    icon: Lightbulb,
+    color: 'text-yellow-500',
+    bg: 'bg-yellow-100',
+    border: 'border-yellow-300',
+    selectedBg: 'bg-yellow-50',
+  },
+  {
+    key: 'entulho',
+    label: 'Entulho / Obra',
+    description: 'Lixo de obra ou material descartado',
+    icon: Construction,
+    color: 'text-amber-600',
+    bg: 'bg-amber-100',
+    border: 'border-amber-300',
+    selectedBg: 'bg-amber-50',
+  },
+  {
+    key: 'lixo',
+    label: 'Descarte de Lixo',
+    description: 'Acúmulo irregular de resíduos',
+    icon: Trash2,
+    color: 'text-red-500',
+    bg: 'bg-red-100',
+    border: 'border-red-300',
+    selectedBg: 'bg-red-50',
+  },
+  {
+    key: 'vazamento',
+    label: 'Vazamento de Água',
+    description: 'Cano rompido ou água desperdiçada',
+    icon: Droplets,
+    color: 'text-blue-500',
+    bg: 'bg-blue-100',
+    border: 'border-blue-300',
+    selectedBg: 'bg-blue-50',
+  },
+  {
+    key: 'esgoto',
+    label: 'Esgoto a Céu Aberto',
+    description: 'Esgoto exposto ou bueiro entupido',
+    icon: Wind,
+    color: 'text-teal-600',
+    bg: 'bg-teal-100',
+    border: 'border-teal-300',
+    selectedBg: 'bg-teal-50',
+  },
+  {
+    key: 'outros',
+    label: 'Outros Problemas',
+    description: 'Qualquer outro problema urbano',
+    icon: ClipboardList,
+    color: 'text-slate-500',
+    bg: 'bg-slate-100',
+    border: 'border-slate-300',
+    selectedBg: 'bg-slate-50',
+  },
+];
 
 interface ReportWizardProps {
   onSuccess: (reportId: string) => void;
@@ -291,24 +365,34 @@ export default function ReportWizard({ onSuccess, onCancel }: ReportWizardProps)
           {step === 2 && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-base font-extrabold text-slate-800 uppercase tracking-wider">Etapa 2 — Categoria do Problema</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Escolha o setor público competente para essa zeladoria</p>
+                <h3 className="text-base font-extrabold text-slate-800 uppercase tracking-wider">Etapa 2 — Tipo de Problema</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Selecione a categoria que melhor descreve o problema encontrado</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {CATEGORY_OPTIONS.map(({ key, label, description, icon: Icon, color, bg, border, selectedBg }) => {
                   const isSelected = category === key;
                   return (
                     <button
                       key={key}
                       onClick={() => setCategory(key as ReportCategory)}
-                      className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 ${
+                      className={`relative p-4 rounded-2xl border-2 flex flex-col items-start gap-2.5 cursor-pointer transition-all duration-200 text-left group ${
                         isSelected
-                          ? 'bg-brand-green/10 text-brand-green border-brand-green/30 shadow-sm'
-                          : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50 hover:border-brand-green/15'
+                          ? `${selectedBg} ${border} shadow-md scale-[1.02]`
+                          : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-sm hover:scale-[1.01]'
                       }`}
                     >
-                      <Sparkles className={`w-5 h-5 ${isSelected ? 'text-brand-green animate-pulse' : 'text-slate-400'}`} />
-                      <span className="text-xs font-bold">{label}</span>
+                      {isSelected && (
+                        <span className="absolute top-2.5 right-2.5 w-4 h-4 bg-brand-green rounded-full flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                        </span>
+                      )}
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isSelected ? bg : 'bg-slate-100'} transition-colors`}>
+                        <Icon className={`w-4.5 h-4.5 ${isSelected ? color : 'text-slate-400'}`} style={{ width: 18, height: 18 }} />
+                      </div>
+                      <div>
+                        <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-slate-800' : 'text-slate-700'}`}>{label}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">{description}</p>
+                      </div>
                     </button>
                   );
                 })}
