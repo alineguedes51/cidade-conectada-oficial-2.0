@@ -47,8 +47,9 @@ function AppContent() {
   const fetchReports = async () => {
     const { data, error } = await supabase
       .from('reports')
-      .select('*')
-      .order('"createdAt"', { ascending: false });
+      .select('id,protocol,"userId","userName","userWhatsapp",description,"photoUrl",category,status,latitude,longitude,address,"createdAt","updatedAt"')
+      .order('"createdAt"', { ascending: false })
+      .limit(200);
     if (!error && data) setReports(data as Report[]);
     setReportsLoading(false);
   };
@@ -58,19 +59,19 @@ function AppContent() {
 
     const channel = supabase
       .channel('reports-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => {
-        fetchReports();
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reports' }, (payload) => {
+        setReports(prev => [payload.new as Report, ...prev]);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reports' }, (payload) => {
+        setReports(prev => prev.map(r => r.id === payload.new.id ? payload.new as Report : r));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reports' }, (payload) => {
+        setReports(prev => prev.filter(r => r.id !== payload.old.id));
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, []);
-
-  useEffect(() => {
-    if (!authLoading) {
-      seedInitialReportsIfEmpty(currentUser?.id || 'system-demo-user');
-    }
-  }, [authLoading, currentUser]);
 
   const selectedReport = reports.find(r => r.id === selectedReportId);
 
