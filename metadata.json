@@ -1,0 +1,6 @@
+{
+  "name": "Igarassu Conecta",
+  "description": "Sistema moderno de denúncias urbanas para zeladoria pública e cidadania ativa.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
