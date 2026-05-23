@@ -68,15 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw new Error(error.message);
     if (!data.user) throw new Error('Falha ao criar usuário.');
 
-    // Upsert profile (trigger may have already created it)
-    await supabase.from('profiles').upsert({
-      id: data.user.id,
-      fullName,
-      email,
-      whatsapp,
-      role: 'comum',
-    });
-
     const profile: UserProfile = {
       uid: data.user.id,
       fullName,
