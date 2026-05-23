@@ -20,10 +20,10 @@ interface AdminDashboardProps {
 }
 
 const STATUS_CONFIG = {
-  recebido:  { label: 'Recebido',     bg: 'bg-sky-500/15',     text: 'text-sky-400',     border: 'border-sky-500/30',     dot: 'bg-sky-400',     bar: 'bg-sky-500'     },
-  analise:   { label: 'Em Análise',   bg: 'bg-amber-500/15',   text: 'text-amber-400',   border: 'border-amber-500/30',   dot: 'bg-amber-400',   bar: 'bg-amber-500'   },
-  andamento: { label: 'Em Andamento', bg: 'bg-violet-500/15',  text: 'text-violet-400',  border: 'border-violet-500/30',  dot: 'bg-violet-400',  bar: 'bg-violet-500'  },
-  resolvido: { label: 'Resolvido',    bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/30', dot: 'bg-emerald-400', bar: 'bg-emerald-500' },
+  recebido:  { label: 'Recebido',     bg: 'bg-slate-900',  text: 'text-sky-400',     border: 'border-sky-500/25',     dot: 'bg-sky-400',     bar: 'bg-sky-500'     },
+  analise:   { label: 'Em Análise',   bg: 'bg-slate-900',  text: 'text-amber-400',   border: 'border-amber-500/25',   dot: 'bg-amber-400',   bar: 'bg-amber-500'   },
+  andamento: { label: 'Em Andamento', bg: 'bg-slate-900',  text: 'text-violet-400',  border: 'border-violet-500/25',  dot: 'bg-violet-400',  bar: 'bg-violet-500'  },
+  resolvido: { label: 'Resolvido',    bg: 'bg-slate-900',  text: 'text-emerald-400', border: 'border-emerald-500/25', dot: 'bg-emerald-400', bar: 'bg-emerald-500' },
 } as const;
 
 const BAIRROS = [
